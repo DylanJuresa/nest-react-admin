@@ -1,34 +1,34 @@
 import { useState } from 'react';
 import { Loader, Plus, X } from 'react-feather';
 import { useForm } from 'react-hook-form';
-import { useQuery } from 'react-query';
 
 import CoursesTable from '../components/courses/CoursesTable';
 import Layout from '../components/layout';
 import Modal from '../components/shared/Modal';
+import RefreshButton from '../components/shared/RefreshButton';
 import useAuth from '../hooks/useAuth';
+import useFilteredQuery from '../hooks/useFilteredQuery';
 import CreateCourseRequest from '../models/course/CreateCourseRequest';
 import courseService from '../services/CourseService';
 
 export default function Courses() {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-
   const [addCourseShow, setAddCourseShow] = useState<boolean>(false);
   const [error, setError] = useState<string>();
 
   const { authenticatedUser } = useAuth();
-  const { data, isLoading } = useQuery(
-    ['courses', name, description],
-    () =>
-      courseService.findAll({
-        name: name || undefined,
-        description: description || undefined,
-      }),
-    {
-      refetchInterval: 1000,
-    },
-  );
+
+  const {
+    data,
+    isLoading,
+    isFetching,
+    refetch,
+    filters,
+    updateFilter,
+  } = useFilteredQuery({
+    queryKey: 'courses',
+    queryFn: (filters) => courseService.findAll(filters),
+    initialFilters: { name: '', description: '' },
+  });
 
   const {
     register,
@@ -43,6 +43,7 @@ export default function Courses() {
       setAddCourseShow(false);
       reset();
       setError(null);
+      refetch();
     } catch (error) {
       setError(error.response.data.message);
     }
@@ -52,14 +53,17 @@ export default function Courses() {
     <Layout>
       <h1 className="font-semibold text-3xl mb-5">Manage Courses</h1>
       <hr />
-      {authenticatedUser.role !== 'user' ? (
-        <button
-          className="btn my-5 flex gap-2 w-full sm:w-auto justify-center"
-          onClick={() => setAddCourseShow(true)}
-        >
-          <Plus /> Add Course
-        </button>
-      ) : null}
+      <div className="flex flex-col sm:flex-row gap-3 my-5">
+        {authenticatedUser.role !== 'user' ? (
+          <button
+            className="btn flex gap-2 w-full sm:w-auto justify-center"
+            onClick={() => setAddCourseShow(true)}
+          >
+            <Plus /> Add Course
+          </button>
+        ) : null}
+        <RefreshButton onRefresh={() => refetch()} isLoading={isFetching} />
+      </div>
 
       <div className="table-filter">
         <div className="flex flex-row gap-5">
@@ -67,15 +71,15 @@ export default function Courses() {
             type="text"
             className="input w-1/2"
             placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={filters.name}
+            onChange={(e) => updateFilter('name', e.target.value)}
           />
           <input
             type="text"
             className="input w-1/2"
             placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            value={filters.description}
+            onChange={(e) => updateFilter('description', e.target.value)}
           />
         </div>
       </div>

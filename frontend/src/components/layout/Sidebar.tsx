@@ -2,6 +2,7 @@ import { BookOpen, Home, LogOut, Users } from 'react-feather';
 import { useHistory } from 'react-router';
 import { Link } from 'react-router-dom';
 
+import logoWhite from '../../assets/urbano-logo-white.png';
 import useAuth from '../../hooks/useAuth';
 import authService from '../../services/AuthService';
 import SidebarItem from './SidebarItem';
@@ -23,8 +24,8 @@ export default function Sidebar({ className }: SidebarProps) {
 
   return (
     <div className={'sidebar ' + className}>
-      <Link to="/" className="no-underline text-black">
-        <h1 className="font-semibold text-center">Carna Project</h1>
+      <Link to="/" className="no-underline text-black flex justify-center mb-5">
+        <img src={logoWhite} alt="Urbano" className="h-12" />
       </Link>
       <nav className="mt-5 flex flex-col gap-3 flex-grow">
         <SidebarItem to="/">
@@ -40,7 +41,7 @@ export default function Sidebar({ className }: SidebarProps) {
         ) : null}
       </nav>
       <button
-        className="text-red-500 rounded-md p-3 transition-colors flex gap-3 justify-center items-center font-semibold focus:outline-none"
+        className="bg-brand-primary text-white hover:bg-opacity-90 rounded-md p-3 transition-colors flex gap-3 justify-center items-center font-semibold focus:outline-none"
         onClick={handleLogout}
       >
         <LogOut /> Logout

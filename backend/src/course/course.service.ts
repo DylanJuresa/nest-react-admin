@@ -1,6 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { getConnection, ILike } from 'typeorm';
 
+import {
+  createPaginatedResult,
+  PaginatedResult,
+} from '../common/dto/pagination.dto';
 import { User } from '../user/user.entity';
 import { CreateCourseDto, UpdateCourseDto } from './course.dto';
 import { Course } from './course.entity';
@@ -15,18 +19,28 @@ export class CourseService {
     }).save();
   }
 
-  async findAll(courseQuery: CourseQuery, userId?: string): Promise<any[]> {
-    Object.keys(courseQuery).forEach((key) => {
-      courseQuery[key] = ILike(`%${courseQuery[key]}%`);
+  async findAll(
+    courseQuery: CourseQuery,
+    userId?: string,
+  ): Promise<PaginatedResult<any>> {
+    const { page = 1, limit = 10, ...filters } = courseQuery;
+
+    const where: any = {};
+    Object.keys(filters).forEach((key) => {
+      if (filters[key]) {
+        where[key] = ILike(`%${filters[key]}%`);
+      }
     });
 
-    const courses = await Course.find({
-      where: courseQuery,
+    const [courses, total] = await Course.findAndCount({
+      where,
       order: {
         name: 'ASC',
         description: 'ASC',
       },
       relations: ['enrolledUsers'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
     let enrolledCourseIds: Set<string> = new Set();
@@ -40,7 +54,7 @@ export class CourseService {
       );
     }
 
-    return courses.map((course) => {
+    const data = courses.map((course) => {
       const { enrolledUsers, ...courseData } = course;
       return {
         ...courseData,
@@ -48,6 +62,8 @@ export class CourseService {
         enrolledCount: enrolledUsers?.length || 0,
       };
     });
+
+    return createPaginatedResult(data, total, page, limit);
   }
 
   async findById(id: string): Promise<Course> {

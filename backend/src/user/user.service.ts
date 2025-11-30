@@ -2,6 +2,10 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { ILike } from 'typeorm';
 
+import {
+  createPaginatedResult,
+  PaginatedResult,
+} from '../common/dto/pagination.dto';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { User } from './user.entity';
 import { UserQuery } from './user.query';
@@ -23,20 +27,31 @@ export class UserService {
     return User.create(createUserDto).save();
   }
 
-  async findAll(userQuery: UserQuery): Promise<User[]> {
-    Object.keys(userQuery).forEach((key) => {
-      if (key !== 'role') {
-        userQuery[key] = ILike(`%${userQuery[key]}%`);
+  async findAll(userQuery: UserQuery): Promise<PaginatedResult<User>> {
+    const { page = 1, limit = 10, ...filters } = userQuery;
+
+    const where: any = {};
+    Object.keys(filters).forEach((key) => {
+      if (filters[key]) {
+        if (key !== 'role') {
+          where[key] = ILike(`%${filters[key]}%`);
+        } else {
+          where[key] = filters[key];
+        }
       }
     });
 
-    return User.find({
-      where: userQuery,
+    const [data, total] = await User.findAndCount({
+      where,
       order: {
         firstName: 'ASC',
         lastName: 'ASC',
       },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+
+    return createPaginatedResult(data, total, page, limit);
   }
 
   async findById(id: string): Promise<User> {

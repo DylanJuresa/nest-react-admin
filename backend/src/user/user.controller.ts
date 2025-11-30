@@ -24,6 +24,7 @@ import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { User } from './user.entity';
 import { UserQuery } from './user.query';
 import { UserService } from './user.service';
+import { PaginatedResult } from 'src/common/dto/pagination.dto';
 
 @Controller('users')
 @ApiTags('Users')
@@ -42,7 +43,7 @@ export class UserController {
 
   @Get()
   @Roles(Role.Admin)
-  async findAll(@Query() userQuery: UserQuery): Promise<User[]> {
+  async findAll(@Query() userQuery: UserQuery): Promise<PaginatedResult<User>> {
     return await this.userService.findAll(userQuery);
   }
 

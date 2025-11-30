@@ -1,6 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ILike } from 'typeorm';
 
+import {
+  createPaginatedResult,
+  PaginatedResult,
+} from '../common/dto/pagination.dto';
 import { CourseService } from '../course/course.service';
 import { CreateContentDto, UpdateContentDto } from './content.dto';
 import { Content } from './content.entity';
@@ -24,18 +28,27 @@ export class ContentService {
     }).save();
   }
 
-  async findAll(contentQuery: ContentQuery): Promise<Content[]> {
-    Object.keys(contentQuery).forEach((key) => {
-      contentQuery[key] = ILike(`%${contentQuery[key]}%`);
+  async findAll(contentQuery: ContentQuery): Promise<PaginatedResult<Content>> {
+    const { page = 1, limit = 10, ...filters } = contentQuery;
+
+    const where: any = {};
+    Object.keys(filters).forEach((key) => {
+      if (filters[key]) {
+        where[key] = ILike(`%${filters[key]}%`);
+      }
     });
 
-    return await Content.find({
-      where: contentQuery,
+    const [data, total] = await Content.findAndCount({
+      where,
       order: {
         name: 'ASC',
         description: 'ASC',
       },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+
+    return createPaginatedResult(data, total, page, limit);
   }
 
   async findById(id: string): Promise<Content> {
@@ -65,17 +78,27 @@ export class ContentService {
   async findAllByCourseId(
     courseId: string,
     contentQuery: ContentQuery,
-  ): Promise<Content[]> {
-    Object.keys(contentQuery).forEach((key) => {
-      contentQuery[key] = ILike(`%${contentQuery[key]}%`);
+  ): Promise<PaginatedResult<Content>> {
+    const { page = 1, limit = 10, ...filters } = contentQuery;
+
+    const where: any = { courseId };
+    Object.keys(filters).forEach((key) => {
+      if (filters[key]) {
+        where[key] = ILike(`%${filters[key]}%`);
+      }
     });
-    return await Content.find({
-      where: { courseId, ...contentQuery },
+
+    const [data, total] = await Content.findAndCount({
+      where,
       order: {
         name: 'ASC',
         description: 'ASC',
       },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+
+    return createPaginatedResult(data, total, page, limit);
   }
 
   async update(

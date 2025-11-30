@@ -12,11 +12,22 @@ export class StatsService {
     private readonly courseService: CourseService,
     private readonly contentService: ContentService,
   ) {}
-  async getStats(): Promise<StatsResponseDto> {
-    const numberOfUsers = await this.userService.count();
+
+  async getStats(includeUserCount: boolean = true): Promise<StatsResponseDto> {
     const numberOfCourses = await this.courseService.count();
     const numberOfContents = await this.contentService.count();
+    const latestCourses = await this.courseService.findLatest(5);
 
-    return { numberOfUsers, numberOfContents, numberOfCourses };
+    const result: StatsResponseDto = {
+      numberOfCourses,
+      numberOfContents,
+      latestCourses,
+    };
+
+    if (includeUserCount) {
+      result.numberOfUsers = await this.userService.count();
+    }
+
+    return result;
   }
 }

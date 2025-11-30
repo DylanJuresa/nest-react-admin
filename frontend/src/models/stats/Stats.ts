@@ -1,5 +1,8 @@
+import Course from '../course/Course';
+
 export default interface Stats {
-  numberOfUsers: number;
+  numberOfUsers?: number;
   numberOfCourses: number;
   numberOfContents: number;
+  latestCourses: Course[];
 }

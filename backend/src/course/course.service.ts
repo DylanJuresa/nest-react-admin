@@ -52,4 +52,13 @@ export class CourseService {
   async count(): Promise<number> {
     return await Course.count();
   }
+
+  async findLatest(limit: number = 5): Promise<Course[]> {
+    return await Course.find({
+      order: {
+        dateCreated: 'DESC',
+      },
+      take: limit,
+    });
+  }
 }

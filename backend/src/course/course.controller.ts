@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Query,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -19,6 +20,7 @@ import { ContentQuery } from '../content/content.query';
 import { ContentService } from '../content/content.service';
 import { Roles } from '../decorators/roles.decorator';
 import { Role } from '../enums/role.enum';
+import { User } from '../user/user.entity';
 import { CreateCourseDto, UpdateCourseDto } from './course.dto';
 import { Course } from './course.entity';
 import { CourseQuery } from './course.query';
@@ -41,8 +43,11 @@ export class CourseController {
   }
 
   @Get()
-  async findAll(@Query() courseQuery: CourseQuery): Promise<Course[]> {
-    return await this.courseService.findAll(courseQuery);
+  async findAll(
+    @Query() courseQuery: CourseQuery,
+    @Request() req,
+  ): Promise<any[]> {
+    return await this.courseService.findAll(courseQuery, req.user?.userId);
   }
 
   @Get('/:id')
@@ -99,5 +104,23 @@ export class CourseController {
     @Param('contentId') contentId: string,
   ): Promise<string> {
     return await this.contentService.delete(id, contentId);
+  }
+
+  @Post('/:id/enroll')
+  @Roles(Role.User)
+  async enroll(@Param('id') id: string, @Request() req): Promise<void> {
+    return await this.courseService.enroll(id, req.user.userId);
+  }
+
+  @Delete('/:id/enroll')
+  @Roles(Role.User)
+  async unenroll(@Param('id') id: string, @Request() req): Promise<void> {
+    return await this.courseService.unenroll(id, req.user.userId);
+  }
+
+  @Get('/:id/enrollments')
+  @Roles(Role.Admin)
+  async getEnrolledUsers(@Param('id') id: string): Promise<Partial<User>[]> {
+    return await this.courseService.getEnrolledUsers(id);
   }
 }

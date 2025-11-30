@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle, Loader, X } from 'react-feather';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
 
 import useAuth from '../../hooks/useAuth';
 import Course from '../../models/course/Course';
@@ -9,14 +8,19 @@ import UpdateCourseRequest from '../../models/course/UpdateCourseRequest';
 import courseService from '../../services/CourseService';
 import Modal from '../shared/Modal';
 import Table from '../shared/Table';
-import TableItem from '../shared/TableItem';
+import CourseRow from './CourseRow';
 
-interface UsersTableProps {
+interface CoursesTableProps {
   data: Course[];
   isLoading: boolean;
+  refetch: () => void;
 }
 
-export default function CoursesTable({ data, isLoading }: UsersTableProps) {
+export default function CoursesTable({
+  data,
+  isLoading,
+  refetch,
+}: CoursesTableProps) {
   const { authenticatedUser } = useAuth();
   const [deleteShow, setDeleteShow] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -37,6 +41,7 @@ export default function CoursesTable({ data, isLoading }: UsersTableProps) {
       setIsDeleting(true);
       await courseService.delete(selectedCourseId);
       setDeleteShow(false);
+      refetch();
     } catch (error) {
       setError(error.response.data.message);
     } finally {
@@ -50,56 +55,45 @@ export default function CoursesTable({ data, isLoading }: UsersTableProps) {
       setUpdateShow(false);
       reset();
       setError(null);
+      refetch();
     } catch (error) {
       setError(error.response.data.message);
     }
   };
 
+  const handleEdit = (course: Course) => {
+    setSelectedCourseId(course.id);
+    setValue('name', course.name);
+    setValue('description', course.description);
+    setUpdateShow(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setSelectedCourseId(id);
+    setDeleteShow(true);
+  };
+
   return (
     <>
       <div className="table-container">
-        <Table columns={['Name', 'Description', 'Created']}>
-          {isLoading
-            ? null
-            : data.map(({ id, name, description, dateCreated }) => (
-                <tr key={id}>
-                  <TableItem>
-                    <Link to={`/courses/${id}`}>{name}</Link>
-                  </TableItem>
-                  <TableItem>{description}</TableItem>
-                  <TableItem>
-                    {new Date(dateCreated).toLocaleDateString()}
-                  </TableItem>
-                  <TableItem className="text-right">
-                    {['admin', 'editor'].includes(authenticatedUser.role) ? (
-                      <button
-                        className="text-indigo-600 hover:text-indigo-900 focus:outline-none"
-                        onClick={() => {
-                          setSelectedCourseId(id);
-
-                          setValue('name', name);
-                          setValue('description', description);
-
-                          setUpdateShow(true);
-                        }}
-                      >
-                        Edit
-                      </button>
-                    ) : null}
-                    {authenticatedUser.role === 'admin' ? (
-                      <button
-                        className="text-red-600 hover:text-red-900 ml-3 focus:outline-none"
-                        onClick={() => {
-                          setSelectedCourseId(id);
-                          setDeleteShow(true);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    ) : null}
-                  </TableItem>
-                </tr>
-              ))}
+        <Table
+          columns={
+            authenticatedUser.role === 'user'
+              ? ['Name', 'Description', 'Created', 'Status']
+              : ['Name', 'Description', 'Created']
+          }
+        >
+          {!isLoading &&
+            data.map((course) => (
+              <CourseRow
+                key={course.id}
+                course={course}
+                role={authenticatedUser.role}
+                onEdit={handleEdit}
+                onDelete={handleDeleteClick}
+                onEnrollmentChange={refetch}
+              />
+            ))}
         </Table>
         {!isLoading && data.length < 1 ? (
           <div className="text-center my-5 text-gray-500">

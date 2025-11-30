@@ -2,9 +2,10 @@ import Course from '../models/course/Course';
 import CourseQuery from '../models/course/CourseQuery';
 import CreateCourseRequest from '../models/course/CreateCourseRequest';
 import UpdateCourseRequest from '../models/course/UpdateCourseRequest';
+import User from '../models/user/User';
 import apiService from './ApiService';
 
-class UserService {
+class CourseService {
   async save(createCourseRequest: CreateCourseRequest): Promise<void> {
     await apiService.post('/api/courses', createCourseRequest);
   }
@@ -29,6 +30,20 @@ class UserService {
   async delete(id: string): Promise<void> {
     await apiService.delete(`/api/courses/${id}`);
   }
+
+  async enroll(courseId: string): Promise<void> {
+    await apiService.post(`/api/courses/${courseId}/enroll`);
+  }
+
+  async unenroll(courseId: string): Promise<void> {
+    await apiService.delete(`/api/courses/${courseId}/enroll`);
+  }
+
+  async getEnrolledUsers(courseId: string): Promise<User[]> {
+    return (
+      await apiService.get<User[]>(`/api/courses/${courseId}/enrollments`)
+    ).data;
+  }
 }
 
-export default new UserService();
+export default new CourseService();

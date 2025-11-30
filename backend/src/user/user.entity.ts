@@ -1,6 +1,13 @@
 import { Exclude } from 'class-transformer';
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Column,
+  Entity,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
+import { Course } from '../course/course.entity';
 import { Role } from '../enums/role.enum';
 
 @Entity()
@@ -30,4 +37,7 @@ export class User extends BaseEntity {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @ManyToMany(() => Course, (course) => course.enrolledUsers)
+  enrolledCourses: Course[];
 }

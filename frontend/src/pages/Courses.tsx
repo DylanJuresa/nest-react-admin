@@ -84,7 +84,7 @@ export default function Courses() {
         </div>
       </div>
 
-      <CoursesTable data={data} isLoading={isLoading} />
+      <CoursesTable data={data} isLoading={isLoading} refetch={refetch} />
 
       {/* Add User Modal */}
       <Modal show={addCourseShow}>

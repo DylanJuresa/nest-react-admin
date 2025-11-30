@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Loader } from 'react-feather';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 
 import useAuth from '../../hooks/useAuth';
@@ -32,8 +33,12 @@ export default function UpdateProfile() {
       setError(null);
       setValue('password', '');
       refetch();
+      toast.success('Perfil actualizado correctamente');
     } catch (error) {
-      setError(error.response.data.message);
+      const errorMessage =
+        error.response?.data?.message || 'Error al actualizar el perfil';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 

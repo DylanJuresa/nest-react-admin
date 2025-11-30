@@ -1,7 +1,6 @@
 import { useQuery } from 'react-query';
 
 import RecentCourses from '../components/dashboard/RecentCourses';
-import UpdateProfile from '../components/dashboard/UpdateProfile';
 import Layout from '../components/layout';
 import useAuth from '../hooks/useAuth';
 import statsService from '../services/StatsService';
@@ -41,14 +40,7 @@ export default function Dashboard() {
           </div>
         ) : null}
 
-        {isAdmin ? (
-          <UpdateProfile />
-        ) : (
-          <>
-            <RecentCourses courses={data?.latestCourses || []} />
-            <UpdateProfile />
-          </>
-        )}
+        <RecentCourses courses={data?.latestCourses || []} />
       </div>
     </Layout>
   );

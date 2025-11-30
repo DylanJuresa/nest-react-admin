@@ -18,7 +18,7 @@ async function createAdminOnFirstUse() {
       isActive: true,
       username: 'admin',
       role: Role.Admin,
-      password: await bcrypt.hash('admin123', 10),
+      password: await bcrypt.hash(process.env.ADMIN_PASSWORD, 10),
     }).save();
   }
 }

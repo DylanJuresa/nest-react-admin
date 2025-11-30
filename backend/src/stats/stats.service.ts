@@ -14,20 +14,23 @@ export class StatsService {
   ) {}
 
   async getStats(includeUserCount: boolean = true): Promise<StatsResponseDto> {
-    const numberOfCourses = await this.courseService.count();
-    const numberOfContents = await this.contentService.count();
-    const latestCourses = await this.courseService.findLatest(5);
-
-    const result: StatsResponseDto = {
+    const [
       numberOfCourses,
       numberOfContents,
       latestCourses,
+      numberOfUsers,
+    ] = await Promise.all([
+      this.courseService.count(),
+      this.contentService.count(),
+      this.courseService.findLatest(5),
+      includeUserCount ? this.userService.count() : Promise.resolve(undefined),
+    ]);
+
+    return {
+      numberOfCourses,
+      numberOfContents,
+      latestCourses,
+      ...(numberOfUsers && { numberOfUsers }),
     };
-
-    if (includeUserCount) {
-      result.numberOfUsers = await this.userService.count();
-    }
-
-    return result;
   }
 }

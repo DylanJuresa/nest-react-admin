@@ -4,11 +4,14 @@ import { useForm } from 'react-hook-form';
 
 import Layout from '../components/layout';
 import FormModal from '../components/shared/FormModal';
+import Pagination from '../components/shared/Pagination';
 import RefreshButton from '../components/shared/RefreshButton';
 import UsersTable from '../components/users/UsersTable';
 import useAuth from '../hooks/useAuth';
 import useFilteredQuery from '../hooks/useFilteredQuery';
+import { PaginatedResponse } from '../models/common/Pagination';
 import CreateUserRequest from '../models/user/CreateUserRequest';
+import User from '../models/user/User';
 import userService from '../services/UserService';
 
 export default function Users() {
@@ -23,15 +26,33 @@ export default function Users() {
     refetch,
     filters,
     updateFilter,
-  } = useFilteredQuery({
+  } = useFilteredQuery<
+    PaginatedResponse<User>,
+    {
+      firstName: string;
+      lastName: string;
+      username: string;
+      role: string;
+      page: number;
+      limit: number;
+    }
+  >({
     queryKey: 'users',
-    queryFn: async (filters) => {
-      return (await userService.findAll(filters)).filter(
-        (user) => user.id !== authenticatedUser.id,
-      );
+    queryFn: (filters) => userService.findAll(filters),
+    initialFilters: {
+      firstName: '',
+      lastName: '',
+      username: '',
+      role: '',
+      page: 1,
+      limit: 2,
     },
-    initialFilters: { firstName: '', lastName: '', username: '', role: '' },
   });
+
+  const users = (data?.results ?? []).filter(
+    (user) => user.id !== authenticatedUser.id,
+  );
+  const meta = data?.meta;
 
   const {
     register,
@@ -101,7 +122,14 @@ export default function Users() {
         </div>
       </div>
 
-      <UsersTable data={data} isLoading={isLoading} refetch={refetch} />
+      <UsersTable data={users} isLoading={isLoading} refetch={refetch} />
+
+      {meta && (
+        <Pagination
+          meta={meta}
+          onPageChange={(page) => updateFilter('page', page)}
+        />
+      )}
 
       <FormModal
         show={addUserShow}

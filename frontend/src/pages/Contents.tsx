@@ -7,9 +7,12 @@ import { useParams } from 'react-router';
 import ContentsTable from '../components/content/ContentsTable';
 import Layout from '../components/layout';
 import FormModal from '../components/shared/FormModal';
+import Pagination from '../components/shared/Pagination';
 import RefreshButton from '../components/shared/RefreshButton';
 import useAuth from '../hooks/useAuth';
 import useFilteredQuery from '../hooks/useFilteredQuery';
+import { PaginatedResponse } from '../models/common/Pagination';
+import Content from '../models/content/Content';
 import CreateContentRequest from '../models/content/CreateContentRequest';
 import contentService from '../services/ContentService';
 import courseService from '../services/CourseService';
@@ -29,11 +32,17 @@ export default function Course() {
     refetch,
     filters,
     updateFilter,
-  } = useFilteredQuery({
+  } = useFilteredQuery<
+    PaginatedResponse<Content>,
+    { name: string; description: string; page: number; limit: number }
+  >({
     queryKey: `contents-${id}`,
-    queryFn: async (filters) => contentService.findAll(id, filters),
-    initialFilters: { name: '', description: '' },
+    queryFn: (filters) => contentService.findAll(id, filters),
+    initialFilters: { name: '', description: '', page: 1, limit: 10 },
   });
+
+  const contents = data?.results ?? [];
+  const meta = data?.meta;
 
   const {
     register,
@@ -87,11 +96,18 @@ export default function Course() {
       </div>
 
       <ContentsTable
-        data={data}
+        data={contents}
         isLoading={isLoading}
         courseId={id}
         refetch={refetch}
       />
+
+      {meta && (
+        <Pagination
+          meta={meta}
+          onPageChange={(page) => updateFilter('page', page)}
+        />
+      )}
 
       <FormModal
         show={addContentShow}

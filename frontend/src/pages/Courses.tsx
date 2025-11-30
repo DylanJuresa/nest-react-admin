@@ -5,9 +5,12 @@ import { useForm } from 'react-hook-form';
 import CoursesTable from '../components/courses/CoursesTable';
 import Layout from '../components/layout';
 import FormModal from '../components/shared/FormModal';
+import Pagination from '../components/shared/Pagination';
 import RefreshButton from '../components/shared/RefreshButton';
 import useAuth from '../hooks/useAuth';
 import useFilteredQuery from '../hooks/useFilteredQuery';
+import { PaginatedResponse } from '../models/common/Pagination';
+import Course from '../models/course/Course';
 import CreateCourseRequest from '../models/course/CreateCourseRequest';
 import courseService from '../services/CourseService';
 
@@ -23,11 +26,17 @@ export default function Courses() {
     refetch,
     filters,
     updateFilter,
-  } = useFilteredQuery({
+  } = useFilteredQuery<
+    PaginatedResponse<Course>,
+    { name: string; description: string; page: number; limit: number }
+  >({
     queryKey: 'courses',
     queryFn: (filters) => courseService.findAll(filters),
-    initialFilters: { name: '', description: '' },
+    initialFilters: { name: '', description: '', page: 1, limit: 10 },
   });
+
+  const courses = data?.results ?? [];
+  const meta = data?.meta;
 
   const {
     register,
@@ -78,7 +87,14 @@ export default function Courses() {
         </div>
       </div>
 
-      <CoursesTable data={data} isLoading={isLoading} refetch={refetch} />
+      <CoursesTable data={courses} isLoading={isLoading} refetch={refetch} />
+
+      {meta && (
+        <Pagination
+          meta={meta}
+          onPageChange={(page) => updateFilter('page', page)}
+        />
+      )}
 
       <FormModal
         show={addCourseShow}

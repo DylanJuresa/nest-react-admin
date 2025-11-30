@@ -31,6 +31,7 @@ export default function useFilteredQuery<
     },
     {
       refetchOnWindowFocus: false,
+      keepPreviousData: true,
       ...queryOptions,
     },
   );

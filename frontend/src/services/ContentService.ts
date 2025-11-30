@@ -1,3 +1,4 @@
+import { PaginatedResponse } from '../models/common/Pagination';
 import Content from '../models/content/Content';
 import ContentQuery from '../models/content/ContentQuery';
 import CreateContentRequest from '../models/content/CreateContentRequest';
@@ -8,11 +9,14 @@ class ContentService {
   async findAll(
     courseId: string,
     contentQuery: ContentQuery,
-  ): Promise<Content[]> {
+  ): Promise<PaginatedResponse<Content>> {
     return (
-      await apiService.get<Content[]>(`/api/courses/${courseId}/contents`, {
-        params: contentQuery,
-      })
+      await apiService.get<PaginatedResponse<Content>>(
+        `/api/courses/${courseId}/contents`,
+        {
+          params: contentQuery,
+        },
+      )
     ).data;
   }
 

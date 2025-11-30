@@ -1,3 +1,4 @@
+import { PaginatedResponse } from '../models/common/Pagination';
 import CreateUserRequest from '../models/user/CreateUserRequest';
 import UpdateUserRequest from '../models/user/UpdateUserRequest';
 import User from '../models/user/User';
@@ -9,9 +10,9 @@ class UserService {
     await apiService.post('/api/users', createUserRequest);
   }
 
-  async findAll(userQuery: UserQuery): Promise<User[]> {
+  async findAll(userQuery: UserQuery): Promise<PaginatedResponse<User>> {
     return (
-      await apiService.get<User[]>('/api/users', {
+      await apiService.get<PaginatedResponse<User>>('/api/users', {
         params: userQuery,
       })
     ).data;

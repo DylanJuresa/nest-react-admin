@@ -1,3 +1,4 @@
+import { PaginatedResponse } from '../models/common/Pagination';
 import Course from '../models/course/Course';
 import CourseQuery from '../models/course/CourseQuery';
 import CreateCourseRequest from '../models/course/CreateCourseRequest';
@@ -10,9 +11,11 @@ class CourseService {
     await apiService.post('/api/courses', createCourseRequest);
   }
 
-  async findAll(courseQuery: CourseQuery): Promise<Course[]> {
+  async findAll(courseQuery: CourseQuery): Promise<PaginatedResponse<Course>> {
     return (
-      await apiService.get<Course[]>('/api/courses', { params: courseQuery })
+      await apiService.get<PaginatedResponse<Course>>('/api/courses', {
+        params: courseQuery,
+      })
     ).data;
   }
 

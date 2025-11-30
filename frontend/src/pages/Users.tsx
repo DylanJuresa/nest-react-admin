@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Loader, Plus, X } from 'react-feather';
+import { Plus } from 'react-feather';
 import { useForm } from 'react-hook-form';
 
 import Layout from '../components/layout';
-import Modal from '../components/shared/Modal';
+import FormModal from '../components/shared/FormModal';
 import RefreshButton from '../components/shared/RefreshButton';
 import UsersTable from '../components/users/UsersTable';
 import useAuth from '../hooks/useAuth';
@@ -14,8 +14,7 @@ import userService from '../services/UserService';
 export default function Users() {
   const { authenticatedUser } = useAuth();
 
-  const [addUserShow, setAddUserShow] = useState<boolean>(false);
-  const [error, setError] = useState<string>();
+  const [addUserShow, setAddUserShow] = useState(false);
 
   const {
     data,
@@ -42,15 +41,10 @@ export default function Users() {
   } = useForm<CreateUserRequest>();
 
   const saveUser = async (createUserRequest: CreateUserRequest) => {
-    try {
-      await userService.save(createUserRequest);
-      setAddUserShow(false);
-      setError(null);
-      reset();
-      refetch();
-    } catch (error) {
-      setError(error.response.data.message);
-    }
+    await userService.save(createUserRequest);
+    setAddUserShow(false);
+    reset();
+    refetch();
   };
 
   return (
@@ -107,87 +101,63 @@ export default function Users() {
         </div>
       </div>
 
-      <UsersTable data={data} isLoading={isLoading} />
+      <UsersTable data={data} isLoading={isLoading} refetch={refetch} />
 
-      {/* Add User Modal */}
-      <Modal show={addUserShow}>
-        <div className="flex">
-          <h1 className="font-semibold mb-3">Add User</h1>
-          <button
-            className="ml-auto focus:outline-none"
-            onClick={() => {
-              reset();
-              setError(null);
-              setAddUserShow(false);
-            }}
-          >
-            <X size={30} />
-          </button>
-        </div>
-        <hr />
-
-        <form
-          className="flex flex-col gap-5 mt-5"
-          onSubmit={handleSubmit(saveUser)}
-        >
-          <div className="flex flex-col gap-5 sm:flex-row">
-            <input
-              type="text"
-              className="input sm:w-1/2"
-              placeholder="First Name"
-              required
-              disabled={isSubmitting}
-              {...register('firstName')}
-            />
-            <input
-              type="text"
-              className="input sm:w-1/2"
-              placeholder="Last Name"
-              required
-              disabled={isSubmitting}
-              {...register('lastName')}
-            />
-          </div>
+      <FormModal
+        show={addUserShow}
+        title="Add User"
+        onClose={() => {
+          reset();
+          setAddUserShow(false);
+        }}
+        onSubmit={handleSubmit(saveUser)}
+        isSubmitting={isSubmitting}
+      >
+        <div className="flex flex-col gap-5 sm:flex-row">
           <input
             type="text"
-            className="input"
+            className="input sm:w-1/2"
+            placeholder="First Name"
             required
-            placeholder="Username"
             disabled={isSubmitting}
-            {...register('username')}
+            {...register('firstName')}
           />
           <input
-            type="password"
-            className="input"
+            type="text"
+            className="input sm:w-1/2"
+            placeholder="Last Name"
             required
-            placeholder="Password (min 6 characters)"
             disabled={isSubmitting}
-            {...register('password')}
+            {...register('lastName')}
           />
-          <select
-            className="input"
-            required
-            {...register('role')}
-            disabled={isSubmitting}
-          >
-            <option value="user">User</option>
-            <option value="editor">Editor</option>
-            <option value="admin">Admin</option>
-          </select>
-          <button className="btn" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <Loader className="animate-spin mx-auto" />
-            ) : (
-              'Save'
-            )}
-          </button>
-          {error ? (
-            <div className="text-red-500 p-3 font-semibold border rounded-md bg-red-50">
-              {error}
-            </div>
-          ) : null}
-        </form>
-      </Modal>
+        </div>
+        <input
+          type="text"
+          className="input"
+          required
+          placeholder="Username"
+          disabled={isSubmitting}
+          {...register('username')}
+        />
+        <input
+          type="password"
+          className="input"
+          required
+          placeholder="Password (min 6 characters)"
+          disabled={isSubmitting}
+          {...register('password')}
+        />
+        <select
+          className="input"
+          required
+          {...register('role')}
+          disabled={isSubmitting}
+        >
+          <option value="user">User</option>
+          <option value="editor">Editor</option>
+          <option value="admin">Admin</option>
+        </select>
+      </FormModal>
     </Layout>
   );
 }

@@ -1,25 +1,28 @@
 import { useState } from 'react';
-import { AlertTriangle, Loader, X } from 'react-feather';
 import { useForm } from 'react-hook-form';
 
 import UpdateUserRequest from '../../models/user/UpdateUserRequest';
 import User from '../../models/user/User';
 import userService from '../../services/UserService';
-import Modal from '../shared/Modal';
+import DeleteModal from '../shared/DeleteModal';
+import FormModal from '../shared/FormModal';
 import Table from '../shared/Table';
 import TableItem from '../shared/TableItem';
 
 interface UsersTableProps {
   data: User[];
   isLoading: boolean;
+  refetch: () => void;
 }
 
-export default function UsersTable({ data, isLoading }: UsersTableProps) {
-  const [deleteShow, setDeleteShow] = useState<boolean>(false);
-  const [updateShow, setUpdateShow] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+export default function UsersTable({
+  data,
+  isLoading,
+  refetch,
+}: UsersTableProps) {
+  const [deleteShow, setDeleteShow] = useState(false);
+  const [updateShow, setUpdateShow] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>();
-  const [error, setError] = useState<string>();
 
   const {
     register,
@@ -30,26 +33,15 @@ export default function UsersTable({ data, isLoading }: UsersTableProps) {
   } = useForm<UpdateUserRequest>();
 
   const handleDelete = async () => {
-    try {
-      setIsDeleting(true);
-      await userService.delete(selectedUserId);
-      setDeleteShow(false);
-    } catch (error) {
-      setError(error.response.data.message);
-    } finally {
-      setIsDeleting(false);
-    }
+    await userService.delete(selectedUserId);
+    refetch();
   };
 
   const handleUpdate = async (updateUserRequest: UpdateUserRequest) => {
-    try {
-      await userService.update(selectedUserId, updateUserRequest);
-      setUpdateShow(false);
-      reset();
-      setError(null);
-    } catch (error) {
-      setError(error.response.data.message);
-    }
+    await userService.update(selectedUserId, updateUserRequest);
+    setUpdateShow(false);
+    reset();
+    refetch();
   };
 
   return (
@@ -114,128 +106,68 @@ export default function UsersTable({ data, isLoading }: UsersTableProps) {
         ) : null}
       </div>
       {/* Delete User Modal */}
-      <Modal show={deleteShow}>
-        <AlertTriangle size={30} className="text-red-500 mr-5 fixed" />
-        <div className="ml-10">
-          <h3 className="mb-2 font-semibold">Delete User</h3>
-          <hr />
-          <p className="mt-2">
-            Are you sure you want to delete the user? All of user's data will be
-            permanently removed.
-            <br />
-            This action cannot be undone.
-          </p>
-        </div>
-        <div className="flex flex-row gap-3 justify-end mt-5">
-          <button
-            className="btn"
-            onClick={() => {
-              setError(null);
-              setDeleteShow(false);
-            }}
-            disabled={isDeleting}
-          >
-            Cancel
-          </button>
-          <button
-            className="btn danger"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            {isDeleting ? (
-              <Loader className="mx-auto animate-spin" />
-            ) : (
-              'Delete'
-            )}
-          </button>
-        </div>
-        {error ? (
-          <div className="text-red-500 p-3 font-semibold border rounded-md bg-red-50">
-            {error}
-          </div>
-        ) : null}
-      </Modal>
+      <DeleteModal
+        show={deleteShow}
+        title="Delete User"
+        message="Are you sure you want to delete the user? All of user's data will be permanently removed. This action cannot be undone."
+        onClose={() => setDeleteShow(false)}
+        onConfirm={handleDelete}
+      />
       {/* Update User Modal */}
-      <Modal show={updateShow}>
-        <div className="flex">
-          <h1 className="font-semibold mb-3">Update User</h1>
-          <button
-            className="ml-auto focus:outline-none"
-            onClick={() => {
-              setUpdateShow(false);
-              setError(null);
-              reset();
-            }}
-          >
-            <X size={30} />
-          </button>
-        </div>
-        <hr />
-
-        <form
-          className="flex flex-col gap-5 mt-5"
-          onSubmit={handleSubmit(handleUpdate)}
-        >
-          <div className="flex flex-col gap-5 sm:flex-row">
-            <input
-              type="text"
-              className="input sm:w-1/2"
-              placeholder="First Name"
-              {...register('firstName')}
-            />
-            <input
-              type="text"
-              className="input sm:w-1/2"
-              placeholder="Last Name"
-              disabled={isSubmitting}
-              {...register('lastName')}
-            />
-          </div>
+      <FormModal
+        show={updateShow}
+        title="Update User"
+        onClose={() => {
+          setUpdateShow(false);
+          reset();
+        }}
+        onSubmit={handleSubmit(handleUpdate)}
+        isSubmitting={isSubmitting}
+      >
+        <div className="flex flex-col gap-5 sm:flex-row">
           <input
             type="text"
-            className="input"
-            placeholder="Username"
+            className="input sm:w-1/2"
+            placeholder="First Name"
             disabled={isSubmitting}
-            {...register('username')}
+            {...register('firstName')}
           />
           <input
-            type="password"
-            className="input"
-            placeholder="Password"
+            type="text"
+            className="input sm:w-1/2"
+            placeholder="Last Name"
             disabled={isSubmitting}
-            {...register('password')}
+            {...register('lastName')}
           />
-          <select
-            className="input"
-            {...register('role')}
-            disabled={isSubmitting}
-          >
-            <option value="user">User</option>
-            <option value="editor">Editor</option>
-            <option value="admin">Admin</option>
-          </select>
-          <div>
-            <label className="font-semibold mr-3">Active</label>
-            <input
-              type="checkbox"
-              className="input w-5 h-5"
-              {...register('isActive')}
-            />
-          </div>
-          <button className="btn" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <Loader className="animate-spin mx-auto" />
-            ) : (
-              'Save'
-            )}
-          </button>
-          {error ? (
-            <div className="text-red-500 p-3 font-semibold border rounded-md bg-red-50">
-              {error}
-            </div>
-          ) : null}
-        </form>
-      </Modal>
+        </div>
+        <input
+          type="text"
+          className="input"
+          placeholder="Username"
+          disabled={isSubmitting}
+          {...register('username')}
+        />
+        <input
+          type="password"
+          className="input"
+          placeholder="Password"
+          disabled={isSubmitting}
+          {...register('password')}
+        />
+        <select className="input" {...register('role')} disabled={isSubmitting}>
+          <option value="user">User</option>
+          <option value="editor">Editor</option>
+          <option value="admin">Admin</option>
+        </select>
+        <div>
+          <label className="font-semibold mr-3">Active</label>
+          <input
+            type="checkbox"
+            className="input w-5 h-5"
+            {...register('isActive')}
+          />
+        </div>
+      </FormModal>
     </>
   );
 }

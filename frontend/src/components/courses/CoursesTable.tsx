@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { AlertTriangle, Loader, X } from 'react-feather';
 import { useForm } from 'react-hook-form';
 
 import useAuth from '../../hooks/useAuth';
 import Course from '../../models/course/Course';
 import UpdateCourseRequest from '../../models/course/UpdateCourseRequest';
 import courseService from '../../services/CourseService';
-import Modal from '../shared/Modal';
+import DeleteModal from '../shared/DeleteModal';
+import FormModal from '../shared/FormModal';
 import Table from '../shared/Table';
 import CourseRow from './CourseRow';
 
@@ -22,11 +22,9 @@ export default function CoursesTable({
   refetch,
 }: CoursesTableProps) {
   const { authenticatedUser } = useAuth();
-  const [deleteShow, setDeleteShow] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [deleteShow, setDeleteShow] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string>();
-  const [error, setError] = useState<string>();
-  const [updateShow, setUpdateShow] = useState<boolean>(false);
+  const [updateShow, setUpdateShow] = useState(false);
 
   const {
     register,
@@ -37,28 +35,15 @@ export default function CoursesTable({
   } = useForm<UpdateCourseRequest>();
 
   const handleDelete = async () => {
-    try {
-      setIsDeleting(true);
-      await courseService.delete(selectedCourseId);
-      setDeleteShow(false);
-      refetch();
-    } catch (error) {
-      setError(error.response.data.message);
-    } finally {
-      setIsDeleting(false);
-    }
+    await courseService.delete(selectedCourseId);
+    refetch();
   };
 
   const handleUpdate = async (updateCourseRequest: UpdateCourseRequest) => {
-    try {
-      await courseService.update(selectedCourseId, updateCourseRequest);
-      setUpdateShow(false);
-      reset();
-      setError(null);
-      refetch();
-    } catch (error) {
-      setError(error.response.data.message);
-    }
+    await courseService.update(selectedCourseId, updateCourseRequest);
+    setUpdateShow(false);
+    reset();
+    refetch();
   };
 
   const handleEdit = (course: Course) => {
@@ -101,98 +86,41 @@ export default function CoursesTable({
           </div>
         ) : null}
       </div>
-      {/* Delete Course Modal */}
-      <Modal show={deleteShow}>
-        <AlertTriangle size={30} className="text-red-500 mr-5 fixed" />
-        <div className="ml-10">
-          <h3 className="mb-2 font-semibold">Delete Course</h3>
-          <hr />
-          <p className="mt-2">
-            Are you sure you want to delete the course? All of course's data
-            will be permanently removed.
-            <br />
-            This action cannot be undone.
-          </p>
-        </div>
-        <div className="flex flex-row gap-3 justify-end mt-5">
-          <button
-            className="btn"
-            onClick={() => {
-              setError(null);
-              setDeleteShow(false);
-            }}
-            disabled={isDeleting}
-          >
-            Cancel
-          </button>
-          <button
-            className="btn danger"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            {isDeleting ? (
-              <Loader className="mx-auto animate-spin" />
-            ) : (
-              'Delete'
-            )}
-          </button>
-        </div>
-        {error ? (
-          <div className="text-red-500 p-3 font-semibold border rounded-md bg-red-50">
-            {error}
-          </div>
-        ) : null}
-      </Modal>
-      {/* Update Course Modal */}
-      <Modal show={updateShow}>
-        <div className="flex">
-          <h1 className="font-semibold mb-3">Update Course</h1>
-          <button
-            className="ml-auto focus:outline-none"
-            onClick={() => {
-              setUpdateShow(false);
-              setError(null);
-              reset();
-            }}
-          >
-            <X size={30} />
-          </button>
-        </div>
-        <hr />
+      <DeleteModal
+        show={deleteShow}
+        title="Delete Course"
+        message="Are you sure you want to delete the course? All of course's data will be permanently removed. This action cannot be undone."
+        onClose={() => setDeleteShow(false)}
+        onConfirm={handleDelete}
+      />
 
-        <form
-          className="flex flex-col gap-5 mt-5"
-          onSubmit={handleSubmit(handleUpdate)}
-        >
-          <input
-            type="text"
-            className="input"
-            placeholder="Name"
-            required
-            {...register('name')}
-          />
-          <input
-            type="text"
-            className="input"
-            placeholder="Description"
-            required
-            disabled={isSubmitting}
-            {...register('description')}
-          />
-          <button className="btn" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <Loader className="animate-spin mx-auto" />
-            ) : (
-              'Save'
-            )}
-          </button>
-          {error ? (
-            <div className="text-red-500 p-3 font-semibold border rounded-md bg-red-50">
-              {error}
-            </div>
-          ) : null}
-        </form>
-      </Modal>
+      <FormModal
+        show={updateShow}
+        title="Update Course"
+        onClose={() => {
+          setUpdateShow(false);
+          reset();
+        }}
+        onSubmit={handleSubmit(handleUpdate)}
+        isSubmitting={isSubmitting}
+      >
+        <input
+          type="text"
+          className="input"
+          placeholder="Name"
+          required
+          disabled={isSubmitting}
+          {...register('name')}
+        />
+        <input
+          type="text"
+          className="input"
+          placeholder="Description"
+          required
+          disabled={isSubmitting}
+          {...register('description')}
+        />
+      </FormModal>
     </>
   );
 }

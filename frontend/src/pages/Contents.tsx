@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Loader, Plus, X } from 'react-feather';
+import { Plus } from 'react-feather';
 import { useForm } from 'react-hook-form';
 import { useQuery } from 'react-query';
 import { useParams } from 'react-router';
 
 import ContentsTable from '../components/content/ContentsTable';
 import Layout from '../components/layout';
-import Modal from '../components/shared/Modal';
+import FormModal from '../components/shared/FormModal';
 import RefreshButton from '../components/shared/RefreshButton';
 import useAuth from '../hooks/useAuth';
 import useFilteredQuery from '../hooks/useFilteredQuery';
@@ -18,8 +18,7 @@ export default function Course() {
   const { id } = useParams<{ id: string }>();
   const { authenticatedUser } = useAuth();
 
-  const [addContentShow, setAddContentShow] = useState<boolean>(false);
-  const [error, setError] = useState<string>();
+  const [addContentShow, setAddContentShow] = useState(false);
 
   const courseQuery = useQuery('course', async () => courseService.findOne(id));
 
@@ -44,15 +43,10 @@ export default function Course() {
   } = useForm<CreateContentRequest>();
 
   const saveContent = async (createContentRequest: CreateContentRequest) => {
-    try {
-      await contentService.save(id, createContentRequest);
-      setAddContentShow(false);
-      reset();
-      setError(null);
-      refetch();
-    } catch (error) {
-      setError(error.response.data.message);
-    }
+    await contentService.save(id, createContentRequest);
+    setAddContentShow(false);
+    reset();
+    refetch();
   };
 
   return (
@@ -99,56 +93,33 @@ export default function Course() {
         refetch={refetch}
       />
 
-      {/* Add User Modal */}
-      <Modal show={addContentShow}>
-        <div className="flex">
-          <h1 className="font-semibold mb-3">Add Content</h1>
-          <button
-            className="ml-auto focus:outline-none"
-            onClick={() => {
-              reset();
-              setAddContentShow(false);
-            }}
-          >
-            <X size={30} />
-          </button>
-        </div>
-        <hr />
-
-        <form
-          className="flex flex-col gap-5 mt-5"
-          onSubmit={handleSubmit(saveContent)}
-        >
-          <input
-            type="text"
-            className="input"
-            placeholder="Name"
-            disabled={isSubmitting}
-            required
-            {...register('name')}
-          />
-          <input
-            type="text"
-            className="input"
-            placeholder="Description"
-            disabled={isSubmitting}
-            required
-            {...register('description')}
-          />
-          <button className="btn" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <Loader className="animate-spin mx-auto" />
-            ) : (
-              'Save'
-            )}
-          </button>
-          {error ? (
-            <div className="text-red-500 p-3 font-semibold border rounded-md bg-red-50">
-              {error}
-            </div>
-          ) : null}
-        </form>
-      </Modal>
+      <FormModal
+        show={addContentShow}
+        title="Add Content"
+        onClose={() => {
+          reset();
+          setAddContentShow(false);
+        }}
+        onSubmit={handleSubmit(saveContent)}
+        isSubmitting={isSubmitting}
+      >
+        <input
+          type="text"
+          className="input"
+          placeholder="Name"
+          disabled={isSubmitting}
+          required
+          {...register('name')}
+        />
+        <input
+          type="text"
+          className="input"
+          placeholder="Description"
+          disabled={isSubmitting}
+          required
+          {...register('description')}
+        />
+      </FormModal>
     </Layout>
   );
 }
